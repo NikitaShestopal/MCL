@@ -1,0 +1,59 @@
+# L1.py
+from utils import clean_text
+from task1 import plot_histogram
+from task2 import vigenere_encrypt, vigenere_decrypt
+from task3 import find_key_length, find_key
+
+
+def main():
+    original_plaintext = """
+    За горами гори, хмарою повиті,
+    Засіяні горем, кровію политі.
+    Споконвіку Прометея
+    Там орел карає,
+    Що день божий добрі ребра
+    Й серце розбиває.
+    Розбиває, та не вип’є
+    Живущої крові —
+    Воно знову оживає
+    І сміється знову.
+    Не вмирає душа наша,
+    Не вмирає воля.
+    І неситий не виоре
+    На дні моря поле.
+    Не скує душі живої
+    І слова живого.
+    Не понесе слави Бога,
+    Великого Бога.
+    """
+
+    secret_key = "КОД"
+
+    print("Шифруємо текст...\n")
+    target_ciphertext = vigenere_encrypt(original_plaintext, secret_key)
+    cleaned_ct = clean_text(target_ciphertext)
+
+    print(f"=== Згенерований криптотекст (перші 50 символів) ===\n{cleaned_ct[:50]}...\n")
+
+    print("=== Л1.1 Гістограма (task1) ===")
+    print("Генеруємо гістограму... (Закрийте вікно графіка, щоб продовжити)")
+    plot_histogram(cleaned_ct, "Частота літер у криптотексті")
+
+    print("\n=== Л1.3 Криптоаналіз: Пошук довжини ключа (task3) ===")
+    key_len = find_key_length(cleaned_ct, min_len=2, max_len=10)
+
+    print("\n=== Л1.3 Криптоаналіз: Пошук ключа (task3) ===")
+    found_key = find_key(cleaned_ct, key_len)
+
+    print(f"\nСправжній ключ: {secret_key}")
+    print(f"Статистичний ключ: {found_key}")
+
+    print("\n=== Л1.2 Розшифрований текст (task2) ===")
+    decrypted_text = vigenere_decrypt(cleaned_ct, found_key)
+
+    # Виводимо перші 100 символів для перевірки
+    print(decrypted_text[:100] + "...")
+
+
+if __name__ == "__main__":
+    main()
