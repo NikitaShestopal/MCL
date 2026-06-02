@@ -1,5 +1,5 @@
 from constants import SBOX, INV_SBOX, RCON
-from utils import gf_mult
+from utils import GF_MULT_2, GF_MULT_3, gf_mult
 
 class AES:
     def __init__(self, key, rounds_override=None):
@@ -55,13 +55,14 @@ class AES:
         state[3], state[7], state[11], state[15] = state[7], state[11], state[15], state[3]
 
     def mix_columns(self, state):
+        # Оптимізовано за допомогою look-up таблиць прямого доступу
         for i in range(4):
             c = i * 4
             s0, s1, s2, s3 = state[c], state[c + 1], state[c + 2], state[c + 3]
-            state[c] = gf_mult(2, s0) ^ gf_mult(3, s1) ^ s2 ^ s3
-            state[c + 1] = s0 ^ gf_mult(2, s1) ^ gf_mult(3, s2) ^ s3
-            state[c + 2] = s0 ^ s1 ^ gf_mult(2, s2) ^ gf_mult(3, s3)
-            state[c + 3] = gf_mult(3, s0) ^ s1 ^ s2 ^ gf_mult(2, s3)
+            state[c] = GF_MULT_2[s0] ^ GF_MULT_3[s1] ^ s2 ^ s3
+            state[c + 1] = s0 ^ GF_MULT_2[s1] ^ GF_MULT_3[s2] ^ s3
+            state[c + 2] = s0 ^ s1 ^ GF_MULT_2[s2] ^ GF_MULT_3[s3]
+            state[c + 3] = GF_MULT_3[s0] ^ s1 ^ s2 ^ GF_MULT_2[s3]
 
     def inv_mix_columns(self, state):
         for i in range(4):

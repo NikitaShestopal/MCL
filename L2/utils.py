@@ -1,6 +1,19 @@
 import random
 
+GF_MULT_2 = [0] * 256
+GF_MULT_3 = [0] * 256
+
+for i in range(256):
+    hi_bit = i & 0x80
+    val2 = (i << 1) & 0xFF
+    if hi_bit:
+        val2 ^= 0x1B
+    GF_MULT_2[i] = val2
+    GF_MULT_3[i] = val2 ^ i
+
 def gf_mult(a, b):
+    if a == 2: return GF_MULT_2[b]
+    if a == 3: return GF_MULT_3[b]
     p = 0
     for _ in range(8):
         if b & 1: p ^= a

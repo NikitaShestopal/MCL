@@ -1,7 +1,7 @@
 from analysis import test_avalanche_effect
 
 def main():
-    TRIALS = 1000
+    TRIALS = 100000
 
     for key_len in [16, 24, 32]:
         bits = key_len * 8
