@@ -1,4 +1,3 @@
-# L1.py
 from utils import clean_text
 from task1 import plot_histogram
 from task2 import vigenere_encrypt, vigenere_decrypt
@@ -6,6 +5,7 @@ from task3 import find_key_length, find_key
 
 
 def main():
+    # Початковий відкритий текст (уривок з поеми Т. Шевченка "Кавказ")
     original_plaintext = """
     За горами гори, хмарою повиті,
     Засіяні горем, кровію политі.
@@ -27,31 +27,37 @@ def main():
     Великого Бога.
     """
 
+    # Секретний ключ для шифрування
     secret_key = "КОД"
 
     print("Шифруємо текст...\n")
+    # Шифрування тексту за допомогою шифру Віженера
     target_ciphertext = vigenere_encrypt(original_plaintext, secret_key)
+    # Очищення зашифрованого тексту (залишаються лише літери алфавіту в нижньому регістрі)
     cleaned_ct = clean_text(target_ciphertext)
 
     print(f"=== Згенерований криптотекст (перші 50 символів) ===\n{cleaned_ct[:50]}...\n")
 
     print("=== Л1.1 Гістограма (task1) ===")
     print("Генеруємо гістограму... (Закрийте вікно графіка, щоб продовжити)")
+    # Візуалізація розподілу частот літер у отриманому шифротексті
     plot_histogram(cleaned_ct, "Частота літер у криптотексті")
 
     print("\n=== Л1.3 Криптоаналіз: Пошук довжини ключа (task3) ===")
+    # Атака методом індексу збігу для визначення довжини ключа
     key_len = find_key_length(cleaned_ct, min_len=2, max_len=10)
 
     print("\n=== Л1.3 Криптоаналіз: Пошук ключа (task3) ===")
+    # Частотний аналіз кожної групи літер (за критерієм хі-квадрат) для відновлення самого ключа
     found_key = find_key(cleaned_ct, key_len)
 
     print(f"\nСправжній ключ: {secret_key}")
     print(f"Статистичний ключ: {found_key}")
 
     print("\n=== Л1.2 Розшифрований текст (task2) ===")
+    # Дешифрування тексту за допомогою знайденого криптоаналізом ключа
     decrypted_text = vigenere_decrypt(cleaned_ct, found_key)
 
-    # Виводимо перші 100 символів для перевірки
     print(decrypted_text[:100] + "...")
 
 

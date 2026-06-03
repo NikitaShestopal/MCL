@@ -1,51 +1,47 @@
-import struct
-from constants import SHA256_K, INITIAL_HASH_VALUES
+import time
+import os
+import hashlib
+from typing import Dict
 
-def _right_rotate(n: int, b: int) -> int:
-    return ((n >> b) | (n << (32 - b))) & 0xffffffff
+def find_partial_collisions() -> None:
+    """
+    Аналізує стійкість SHA-256 до пошуку колізій на урізаній довжині префіксу (від 5 до 15 бітів).
+    Реалізує атаку "Birthday Attack" (парадокс днів народження) для оцінки експоненційного зростання часу.
+    """
+    print("\n" + "=" * 60)
+    print(" Л3.3: ТАБЛИЦЯ ПОШУКУ ЧАСТКОВИХ КОЛІЗІЙ")
+    print("=" * 60)
+    print(f"| {'k (біти)':<10} | {'Середній час (мс)':<18} | {'Кількість спроб':<16} |")
+    print(f"|{'-' * 12}|{'-' * 20}|{'-' * 18}|")
 
-def sha256_custom(message: bytes) -> bytes:
-    h0, h1, h2, h3, h4, h5, h6, h7 = INITIAL_HASH_VALUES
+    # Досліджуємо складність для k старших бітів префіксу
+    for k in range(5, 16):
+        total_time = 0.0
+        shift = 256 - k  # Зсув для виділення k найстарших бітів із 256-бітного числа
+        attempts = 100   # Кількість експериментів для усереднення результатів
 
-    original_bit_len = len(message) * 8
-    message += b'\x80'
+        for _ in range(attempts):
+            seen: Dict[int, bytes] = {}
+            start_time = time.perf_counter()
 
-    while (len(message) * 8) % 512 != 448:
-        message += b'\x00'
+            while True:
+                # Генерація випадкового блоку даних (nonce)
+                msg = os.urandom(8)
+                # Розрахунок стандартного хешу
+                h = int.from_bytes(hashlib.sha256(msg).digest(), 'big')
+                # Бітовий зсув праворуч залишає лише k старших бітів
+                prefix = h >> shift
 
-    message += struct.pack('>Q', original_bit_len)
+                # Якщо такий префікс уже є в таблиці, і дані не дублюють самі себе — колізію знайдено
+                if prefix in seen and seen[prefix] != msg:
+                    break
 
-    for i in range(0, len(message), 64):
-        chunk = message[i:i + 64]
-        w = list(struct.unpack('>16L', chunk)) + [0] * 48
+                # Фіксація префіксу в пам'яті
+                seen[prefix] = msg
 
-        for j in range(16, 64):
-            s0 = _right_rotate(w[j - 15], 7) ^ _right_rotate(w[j - 15], 18) ^ (w[j - 15] >> 3)
-            s1 = _right_rotate(w[j - 2], 17) ^ _right_rotate(w[j - 2], 19) ^ (w[j - 2] >> 10)
-            w[j] = (w[j - 16] + s0 + w[j - 7] + s1) & 0xffffffff
+            total_time += (time.perf_counter() - start_time)
 
-        a, b, c, d, e, f, g, h = h0, h1, h2, h3, h4, h5, h6, h7
-
-        for j in range(64):
-            S1 = _right_rotate(e, 6) ^ _right_rotate(e, 11) ^ _right_rotate(e, 25)
-            ch = (e & f) ^ (~e & g)
-            temp1 = (h + S1 + ch + SHA256_K[j] + w[j]) & 0xffffffff
-
-            S0 = _right_rotate(a, 2) ^ _right_rotate(a, 13) ^ _right_rotate(a, 22)
-            maj = (a & b) ^ (a & c) ^ (b & c)
-            temp2 = (S0 + maj) & 0xffffffff
-
-            h, g, f, e, d, c, b, a = (
-                g, f, e, (d + temp1) & 0xffffffff, c, b, a, (temp1 + temp2) & 0xffffffff
-            )
-
-        h0 = (h0 + a) & 0xffffffff
-        h1 = (h1 + b) & 0xffffffff
-        h2 = (h2 + c) & 0xffffffff
-        h3 = (h3 + d) & 0xffffffff
-        h4 = (h4 + e) & 0xffffffff
-        h5 = (h5 + f) & 0xffffffff
-        h6 = (h6 + g) & 0xffffffff
-        h7 = (h7 + h) & 0xffffffff
-
-    return struct.pack('>8L', h0, h1, h2, h3, h4, h5, h6, h7)
+        # Обчислюємо середній час виконання однієї успішної атаки у мілісекундах
+        avg_time_ms = (total_time / attempts) * 1000
+        print(f"| {k:<10} | {avg_time_ms:<18.4f} | {attempts:<16} |")
+    print("-" * 54)
